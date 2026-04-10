@@ -1,0 +1,56 @@
+# ===============================================
+# NIDS Default Rules — Snort-style Detection Rules
+# ===============================================
+# Syntax:
+#   alert <proto> <src_ip> <src_port> -> <dst_ip> <dst_port> (
+#       msg:"description"; sid:<id>; severity:<LEVEL>; flags:<tcp_flags>;
+#       content:"payload_match"; attack_type:<type>;
+#   )
+# Keywords: any, $HOME_NET, $EXTERNAL
+# Severity: LOW | MEDIUM | HIGH | CRITICAL
+# ===============================================
+
+# --- SSH brute force (SYN to port 22) ---
+alert tcp any any -> any 22 (msg:"SSH connection attempt"; sid:1001; severity:LOW; flags:S; attack_type:brute_force;)
+
+# --- FTP brute force (SYN to port 21) ---
+alert tcp any any -> any 21 (msg:"FTP connection attempt"; sid:1002; severity:LOW; flags:S; attack_type:brute_force;)
+
+# --- Telnet access attempt ---
+alert tcp any any -> any 23 (msg:"Telnet connection attempt - unencrypted protocol"; sid:1003; severity:MEDIUM; flags:S; attack_type:brute_force;)
+
+# --- HTTPS connection monitoring ---
+alert tcp any any -> any 443 (msg:"HTTPS connection"; sid:1004; severity:LOW; flags:S; attack_type:recon;)
+
+# --- DNS zone transfer attempt (TCP port 53) ---
+alert tcp any any -> any 53 (msg:"DNS zone transfer attempt"; sid:1005; severity:HIGH; flags:S; attack_type:dns_enum;)
+
+# --- ICMP ping sweep ---
+alert icmp any any -> any any (msg:"ICMP ping detected"; sid:1006; severity:LOW; attack_type:recon;)
+
+# --- SMB access attempt ---
+alert tcp any any -> any 445 (msg:"SMB connection attempt"; sid:1007; severity:MEDIUM; flags:S; attack_type:recon;)
+
+# --- RDP connection ---
+alert tcp any any -> any 3389 (msg:"RDP connection attempt"; sid:1008; severity:MEDIUM; flags:S; attack_type:recon;)
+
+# --- MySQL direct access ---
+alert tcp any any -> any 3306 (msg:"MySQL direct connection attempt"; sid:1009; severity:HIGH; flags:S; attack_type:recon;)
+
+# --- PostgreSQL direct access ---
+alert tcp any any -> any 5432 (msg:"PostgreSQL direct connection attempt"; sid:1010; severity:HIGH; flags:S; attack_type:recon;)
+
+# --- Redis unauthenticated access ---
+alert tcp any any -> any 6379 (msg:"Redis connection attempt"; sid:1011; severity:HIGH; flags:S; attack_type:recon;)
+
+# --- SMTP open relay probe ---
+alert tcp any any -> any 25 (msg:"SMTP connection attempt"; sid:1012; severity:MEDIUM; flags:S; attack_type:recon;)
+
+# --- VNC access ---
+alert tcp any any -> any 5900 (msg:"VNC connection attempt"; sid:1013; severity:MEDIUM; flags:S; attack_type:recon;)
+
+# --- Docker API exposed ---
+alert tcp any any -> any 2375 (msg:"Docker API unencrypted access"; sid:1014; severity:CRITICAL; flags:S; attack_type:exploit;)
+
+# --- Kubernetes API ---
+alert tcp any any -> any 6443 (msg:"Kubernetes API connection"; sid:1015; severity:HIGH; flags:S; attack_type:recon;)

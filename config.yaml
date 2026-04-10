@@ -1,0 +1,112 @@
+# ============================================================
+# NIDS Configuration File
+# Network Intrusion Detection System - All Settings
+# ============================================================
+
+# --- Network Capture Settings ---
+capture:
+  interface: null          # null = auto-detect default interface
+  filter: ""               # BPF filter (e.g., "tcp port 80")
+  snaplen: 65535           # Max bytes per packet to capture
+  promisc: true            # Promiscuous mode
+  timeout: 0               # Capture timeout in seconds (0 = infinite)
+  batch_size: 10           # Packets to process per batch for ML
+
+# --- Detection Thresholds ---
+thresholds:
+  port_scan:
+    unique_ports: 15       # Unique ports from 1 src IP within time_window = port scan
+    time_window: 60        # Seconds
+  syn_flood:
+    syn_count: 100         # SYN packets from 1 src IP within time_window
+    time_window: 10        # Seconds
+  brute_force:
+    attempts: 5            # Failed login attempts within time_window
+    time_window: 60        # Seconds
+    ports: [22, 21]        # SSH=22, FTP=21
+  arp_spoof:
+    duplicate_ips: 2       # Different MACs claiming same IP
+    time_window: 30        # Seconds
+  dns_poison:
+    response_threshold: 5  # Multiple different answers for same query
+    time_window: 10        # Seconds
+
+# --- Rule Engine ---
+rules:
+  rules_dir: "rules"                # Directory containing .rules files
+  default_rules_file: "default.rules"  # Auto-generated if missing
+  enabled: true
+
+# --- ML Anomaly Detection ---
+ml:
+  enabled: true
+  model_path: "models/anomaly_model.joblib"
+  scaler_path: "models/scaler.joblib"
+  algorithm: "isolation_forest"    # isolation_forest or random_forest
+  contamination: 0.05              # Expected fraction of anomalies (IF only)
+  n_estimators: 100                # Number of trees
+  retrain_interval: 3600           # Retrain every N seconds (0 = never)
+  feature_window: 60               # Seconds of traffic to aggregate features over
+  min_samples_for_training: 500    # Min packets before ML kicks in
+
+# --- Alert Settings ---
+alerts:
+  severity_levels:
+    LOW: 1
+    MEDIUM: 2
+    HIGH: 3
+    CRITICAL: 4
+  
+  # Terminal alerts (always enabled)
+  terminal:
+    enabled: true
+    colors:
+      LOW: "yellow"
+      MEDIUM: "orange1"
+      HIGH: "red"
+      CRITICAL: "bold red on white"
+
+  # File logging
+  file:
+    enabled: true
+    path: "logs/alerts.log"
+    max_size_mb: 50
+    backup_count: 5
+    format: "%(asctime)s | %(levelname)s | %(message)s"
+
+  # Email notifications
+  email:
+    enabled: false
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    use_tls: true
+    sender: "nids-alerts@example.com"
+    password: ""                      # Use env var NIDS_EMAIL_PASSWORD
+    recipients:
+      - "admin@example.com"
+    subject_prefix: "[NIDS ALERT]"
+    min_severity: "HIGH"              # Only email HIGH and CRITICAL
+
+  # Slack webhook
+  slack:
+    enabled: false
+    webhook_url: ""                   # Use env var NIDS_SLACK_WEBHOOK
+    channel: "#security-alerts"
+    username: "NIDS Bot"
+    icon_emoji: ":shield:"
+    min_severity: "MEDIUM"
+
+# --- Database ---
+database:
+  path: "data/nids_alerts.db"
+  echo: false                        # SQLAlchemy echo SQL queries
+  max_alerts: 100000                 # Prune oldest alerts beyond this
+  prune_interval: 3600               # Check for pruning every N seconds
+
+# --- Dashboard ---
+dashboard:
+  refresh_rate: 1.0                  # Seconds between dashboard refreshes
+  max_alerts_display: 20             # Recent alerts shown on dashboard
+  max_packets_display: 50            # Recent packets shown
+  show_ml_stats: true
+  show_rule_matches: true
