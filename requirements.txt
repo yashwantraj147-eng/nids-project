@@ -22,7 +22,7 @@ sqlalchemy>=2.0.0
 requests>=2.31.0
 
 # Testing
-pytest>=7.4.0
+pytest>=9.2.0
 pytest-mock>=3.11.0
 
 # Color terminal output (fallback)
