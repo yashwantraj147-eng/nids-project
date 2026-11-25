@@ -73,10 +73,9 @@ class Rule:
             return False
 
         # Content match (substring in raw summary)
-        if self.content and self.content.lower() not in pkt.raw_summary.lower():
-            return False
-
-        return True
+        if not self.content:
+            return True
+        return self.content.lower() in pkt.raw_summary.lower()
 
     @staticmethod
     def _port_match(rule_port: str, actual_port: int) -> bool:
