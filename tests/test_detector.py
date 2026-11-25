@@ -15,8 +15,6 @@ Run with:
 import os
 import sys
 import time
-import datetime
-import tempfile
 
 import numpy as np
 import pytest
@@ -24,12 +22,15 @@ import pytest
 # Ensure the project root is on the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.database import DatabaseManager, AlertRecord
-from src.packet_capture import PacketInfo, PacketCapture
-from src.rule_engine import Rule, RuleEngine
-from src.ml_detector import MLDetector, FeatureExtractor, generate_synthetic_training_data
 from src.alert_manager import AlertManager
-
+from src.database import DatabaseManager
+from src.ml_detector import (
+    FeatureExtractor,
+    MLDetector,
+    generate_synthetic_training_data,
+)
+from src.packet_capture import PacketCapture, PacketInfo
+from src.rule_engine import Rule, RuleEngine
 
 # =====================================================================
 # Helpers — create mock PacketInfo objects

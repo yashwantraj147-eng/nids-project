@@ -24,8 +24,7 @@ import os
 import re
 import time
 from collections import defaultdict
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 from src.packet_capture import PacketCapture, PacketInfo
 
@@ -62,24 +61,20 @@ class Rule:
             return False
 
         # Source port check
-        if self.src_port != "any" and pkt.src_port is not None:
-            if not self._port_match(self.src_port, pkt.src_port):
-                return False
+        if self.src_port != "any" and pkt.src_port is not None and not self._port_match(self.src_port, pkt.src_port):
+            return False
 
         # Destination port check
-        if self.dst_port != "any" and pkt.dst_port is not None:
-            if not self._port_match(self.dst_port, pkt.dst_port):
-                return False
+        if self.dst_port != "any" and pkt.dst_port is not None and not self._port_match(self.dst_port, pkt.dst_port):
+            return False
 
         # TCP flags check (only if rule specifies flags and packet is TCP)
-        if self.flags and pkt.protocol == "TCP":
-            if self.flags.upper() not in pkt.flags.upper():
-                return False
+        if self.flags and pkt.protocol == "TCP" and self.flags.upper() not in pkt.flags.upper():
+            return False
 
         # Content match (substring in raw summary)
-        if self.content:
-            if self.content.lower() not in pkt.raw_summary.lower():
-                return False
+        if self.content and self.content.lower() not in pkt.raw_summary.lower():
+            return False
 
         return True
 
@@ -162,10 +157,10 @@ class RuleEngine:
                     rule = self._parse_rule(line)
                     if rule:
                         self.rules.append(rule)
-                except Exception as e:
+                except (ValueError, AttributeError, IndexError) as e:
                     print(f"[!] Rule parse error in {filepath}:{line_no}: {e}")
 
-    def _parse_rule(self, line: str) -> Optional[Rule]:
+    def _parse_rule(self, line: str) -> Rule | None:
         """
         Parse a single Snort-style rule string.
         Format: action proto src_ip src_port -> dst_ip dst_port (options)
@@ -302,7 +297,7 @@ alert tcp any any -> any 3389 (msg:"RDP connection attempt"; sid:1008; severity:
     # ------------------------------------------------------------------
     # Heuristic detectors
     # ------------------------------------------------------------------
-    def _detect_port_scan(self, pkt: PacketInfo) -> Optional[dict]:
+    def _detect_port_scan(self, pkt: PacketInfo) -> dict | None:
         """Detect port scans by tracking unique destination ports per source IP."""
         # Only consider TCP SYN packets (initial connection attempts)
         if pkt.protocol != "TCP" or "S" not in pkt.flags:
@@ -349,7 +344,7 @@ alert tcp any any -> any 3389 (msg:"RDP connection attempt"; sid:1008; severity:
             }
         return None
 
-    def _detect_syn_flood(self, pkt: PacketInfo) -> Optional[dict]:
+    def _detect_syn_flood(self, pkt: PacketInfo) -> dict | None:
         """Detect SYN flood by counting SYN packets per source IP."""
         if pkt.protocol != "TCP" or "S" not in pkt.flags:
             return None
@@ -388,7 +383,7 @@ alert tcp any any -> any 3389 (msg:"RDP connection attempt"; sid:1008; severity:
             }
         return None
 
-    def _detect_brute_force(self, pkt: PacketInfo) -> Optional[dict]:
+    def _detect_brute_force(self, pkt: PacketInfo) -> dict | None:
         """Detect brute-force attempts on SSH (22) and FTP (21)."""
         if pkt.protocol != "TCP" or "S" not in pkt.flags:
             return None
@@ -434,7 +429,7 @@ alert tcp any any -> any 3389 (msg:"RDP connection attempt"; sid:1008; severity:
             }
         return None
 
-    def _detect_arp_spoof(self, pkt: PacketInfo) -> Optional[dict]:
+    def _detect_arp_spoof(self, pkt: PacketInfo) -> dict | None:
         """Detect ARP spoofing by checking if multiple MACs claim the same IP."""
         if pkt.protocol != "ARP":
             return None
@@ -463,7 +458,7 @@ alert tcp any any -> any 3389 (msg:"RDP connection attempt"; sid:1008; severity:
                 }
         return None
 
-    def _detect_dns_poison(self, pkt: PacketInfo) -> Optional[dict]:
+    def _detect_dns_poison(self, pkt: PacketInfo) -> dict | None:
         """Detect DNS poisoning by looking for divergent answers to the same query."""
         if not pkt.dns_query or not pkt.dns_answers:
             return None

@@ -11,24 +11,22 @@ Displays:
 """
 
 import datetime
-from typing import Optional
 
+from rich import box
+from rich.align import Align
+from rich.columns import Columns
 from rich.console import Console
 from rich.layout import Layout
 from rich.live import Live
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
-from rich.align import Align
-from rich.columns import Columns
-from rich import box
 
+from src.alert_manager import AlertManager
 from src.database import DatabaseManager
+from src.ml_detector import FeatureExtractor, MLDetector
 from src.packet_capture import PacketCapture
 from src.rule_engine import RuleEngine
-from src.ml_detector import MLDetector, FeatureExtractor
-from src.alert_manager import AlertManager
-
 
 # Severity color mapping for alert tables
 SEVERITY_STYLES = {
@@ -98,11 +96,6 @@ class Dashboard:
         header_text = Text(
             "  🛡️  NETWORK INTRUSION DETECTION SYSTEM  🛡️  ",
             style="bold white on dark_blue",
-            justify="center",
-        )
-        timestamp = Text(
-            f"  {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  ",
-            style="dim",
             justify="center",
         )
         layout["header"].update(

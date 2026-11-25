@@ -10,15 +10,14 @@ Sends detection alerts to:
 Each channel respects a minimum severity threshold from config.yaml.
 """
 
-import os
+import datetime
 import json
 import logging
+import os
 import smtplib
-import datetime
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from logging.handlers import RotatingFileHandler
-from typing import Optional
 
 import requests
 from rich.console import Console
@@ -26,7 +25,6 @@ from rich.panel import Panel
 from rich.text import Text
 
 from src.database import DatabaseManager
-
 
 # Severity ordering for threshold comparisons
 SEVERITY_ORDER = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
@@ -94,14 +92,14 @@ class AlertManager:
         src_ip: str,
         attack_type: str,
         severity: str,
-        dst_ip: Optional[str] = None,
-        src_port: Optional[int] = None,
-        dst_port: Optional[int] = None,
-        protocol: Optional[str] = None,
-        description: Optional[str] = None,
-        raw_packet: Optional[str] = None,
-        detection_source: Optional[str] = None,
-        confidence: Optional[float] = None,
+        dst_ip: str | None = None,
+        src_port: int | None = None,
+        dst_port: int | None = None,
+        protocol: str | None = None,
+        description: str | None = None,
+        raw_packet: str | None = None,
+        detection_source: str | None = None,
+        confidence: float | None = None,
     ):
         """
         Process a detection event across all enabled channels.
@@ -239,7 +237,7 @@ class AlertManager:
                     server.login(cfg["sender"], cfg["password"])
                 server.sendmail(cfg["sender"], cfg.get("recipients", []), msg.as_string())
 
-        except Exception as e:
+        except (smtplib.SMTPException, OSError, KeyError, ValueError) as e:
             # Email failure should never crash the NIDS — log and continue
             if self.file_logger:
                 self.file_logger.error(f"Email alert failed: {e}")
@@ -305,7 +303,7 @@ class AlertManager:
             )
             resp.raise_for_status()
 
-        except Exception as e:
+        except (requests.RequestException, OSError, KeyError, ValueError) as e:
             if self.file_logger:
                 self.file_logger.error(f"Slack alert failed: {e}")
             console.print(f"[dim red]Slack alert failed: {e}[/dim red]")

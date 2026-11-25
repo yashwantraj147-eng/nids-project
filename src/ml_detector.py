@@ -18,15 +18,15 @@ Includes:
   - Model persistence (save/load via joblib)
 """
 
-import os
-import time
 import math
+import os
 import threading
+import time
 from collections import defaultdict, deque
-from typing import Optional
+from typing import ClassVar
 
-import numpy as np
 import joblib
+import numpy as np
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 
@@ -43,7 +43,7 @@ class FeatureExtractor:
     """
 
     # Feature names in order — useful for debugging and logging
-    FEATURE_NAMES = [
+    FEATURE_NAMES: ClassVar[list[str]] = [
         "packets_per_second",
         "unique_src_ips",
         "unique_dst_ips",
@@ -75,7 +75,7 @@ class FeatureExtractor:
             while self._buffer and self._buffer[0].timestamp < cutoff:
                 self._buffer.popleft()
 
-    def extract_features(self) -> Optional[np.ndarray]:
+    def extract_features(self) -> np.ndarray | None:
         """
         Compute a feature vector from the current window of packets.
         Returns None if buffer is empty.
@@ -193,8 +193,8 @@ class MLDetector:
         self.n_estimators = config.get("n_estimators", 100)
         self.min_samples = config.get("min_samples_for_training", 500)
 
-        self.model: Optional[IsolationForest] = None
-        self.scaler: Optional[StandardScaler] = None
+        self.model: IsolationForest | None = None
+        self.scaler: StandardScaler | None = None
         self.is_trained = False
 
         # Training data accumulator
@@ -215,7 +215,7 @@ class MLDetector:
                 self.model = joblib.load(self.model_path)
                 self.scaler = joblib.load(self.scaler_path)
                 self.is_trained = True
-            except Exception as e:
+            except (OSError, ValueError, EOFError, TypeError) as e:
                 print(f"[!] Failed to load ML model: {e}")
                 self.is_trained = False
 
@@ -263,7 +263,7 @@ class MLDetector:
         joblib.dump(self.model, self.model_path)
         joblib.dump(self.scaler, self.scaler_path)
 
-    def predict(self, features: np.ndarray) -> Optional[dict]:
+    def predict(self, features: np.ndarray) -> dict | None:
         """
         Predict whether a feature vector represents anomalous traffic.
         Returns dict with is_anomaly, score, and confidence, or None if not trained.
@@ -298,7 +298,7 @@ class MLDetector:
                 "score": float(raw_score),
                 "confidence": float(confidence),
             }
-        except Exception as e:
+        except (ValueError, TypeError, AttributeError) as e:
             print(f"[!] ML prediction error: {e}")
             return None
 

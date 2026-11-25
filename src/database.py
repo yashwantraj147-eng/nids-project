@@ -7,15 +7,21 @@ Provides:
   - Thread-safe session management via scoped_session
 """
 
-import os
 import datetime
-from typing import Optional
+import os
 
 from sqlalchemy import (
-    create_engine, Column, Integer, String, DateTime, Float, Text,
-    desc, func, inspect, select
+    Column,
+    DateTime,
+    Float,
+    Integer,
+    String,
+    Text,
+    create_engine,
+    desc,
+    func,
 )
-from sqlalchemy.orm import declarative_base, sessionmaker, scoped_session
+from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
 
 # Declarative base for ORM models
 Base = declarative_base()
@@ -103,15 +109,15 @@ class DatabaseManager:
         src_ip: str,
         attack_type: str,
         severity: str,
-        dst_ip: Optional[str] = None,
-        src_port: Optional[int] = None,
-        dst_port: Optional[int] = None,
-        protocol: Optional[str] = None,
-        description: Optional[str] = None,
-        raw_packet: Optional[str] = None,
-        detection_source: Optional[str] = None,
-        confidence: Optional[float] = None,
-        timestamp: Optional[datetime.datetime] = None,
+        dst_ip: str | None = None,
+        src_port: int | None = None,
+        dst_port: int | None = None,
+        protocol: str | None = None,
+        description: str | None = None,
+        raw_packet: str | None = None,
+        detection_source: str | None = None,
+        confidence: float | None = None,
+        timestamp: datetime.datetime | None = None,
     ) -> AlertRecord:
         """Insert a new alert and return the created record."""
         session = self.Session()

@@ -20,22 +20,26 @@ CLI usage:
     python main.py --list-interfaces # List available network interfaces
 """
 
-import os
-import sys
-import time
 import argparse
+import os
 import signal
+import sys
 import threading
+import time
 
 import yaml
 from rich.console import Console
 
-from src.database import DatabaseManager
 from src.alert_manager import AlertManager
+from src.dashboard import Dashboard
+from src.database import DatabaseManager
+from src.ml_detector import (
+    FeatureExtractor,
+    MLDetector,
+    generate_synthetic_training_data,
+)
 from src.packet_capture import PacketCapture, PacketInfo, list_interfaces
 from src.rule_engine import RuleEngine
-from src.ml_detector import MLDetector, FeatureExtractor, generate_synthetic_training_data
-from src.dashboard import Dashboard
 
 console = Console()
 

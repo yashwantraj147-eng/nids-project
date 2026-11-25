@@ -8,14 +8,26 @@ Provides:
   - Thread-safe packet queue for downstream consumers
 """
 
-import time
+import logging
 import threading
+import time
 from collections import defaultdict, deque
-from typing import Optional, Callable
+from collections.abc import Callable
+
+logger = logging.getLogger(__name__)
 
 from scapy.all import (
-    sniff, IP, IPv6, TCP, UDP, ICMP, ARP, DNS, Ether,
-    conf, get_if_list, get_if_addr
+    ARP,
+    DNS,
+    ICMP,
+    IP,
+    TCP,
+    UDP,
+    Ether,
+    IPv6,
+    get_if_addr,
+    get_if_list,
+    sniff,
 )
 
 
@@ -23,23 +35,33 @@ class PacketInfo:
     """Lightweight data class holding extracted fields from a single packet."""
 
     __slots__ = [
-        "timestamp", "src_ip", "dst_ip", "src_port", "dst_port",
-        "protocol", "flags", "payload_size", "src_mac", "dst_mac",
-        "dns_query", "dns_answers", "raw_summary",
+        "dns_answers",
+        "dns_query",
+        "dst_ip",
+        "dst_mac",
+        "dst_port",
+        "flags",
+        "payload_size",
+        "protocol",
+        "raw_summary",
+        "src_ip",
+        "src_mac",
+        "src_port",
+        "timestamp",
     ]
 
     def __init__(self):
         self.timestamp: float = 0.0
         self.src_ip: str = ""
         self.dst_ip: str = ""
-        self.src_port: Optional[int] = None
-        self.dst_port: Optional[int] = None
+        self.src_port: int | None = None
+        self.dst_port: int | None = None
         self.protocol: str = ""
         self.flags: str = ""            # TCP flags string: SYN, ACK, etc.
         self.payload_size: int = 0
         self.src_mac: str = ""
         self.dst_mac: str = ""
-        self.dns_query: Optional[str] = None
+        self.dns_query: str | None = None
         self.dns_answers: list[str] = []
         self.raw_summary: str = ""
 
@@ -59,7 +81,7 @@ class PacketCapture:
     """
 
     def __init__(self, config: dict):
-        self.interface: Optional[str] = config.get("interface")
+        self.interface: str | None = config.get("interface")
         self.bpf_filter: str = config.get("filter", "")
         self.snaplen: int = config.get("snaplen", 65535)
         self.promisc: bool = config.get("promisc", True)
@@ -73,8 +95,8 @@ class PacketCapture:
 
         # Thread control
         self._running = threading.Event()
-        self._thread: Optional[threading.Thread] = None
-        self._callback: Optional[Callable] = None
+        self._thread: threading.Thread | None = None
+        self._callback: Callable | None = None
 
         # ARP table for spoof detection: maps IP -> set of MACs seen
         self.arp_table: dict[str, set[str]] = defaultdict(set)
@@ -135,7 +157,7 @@ class PacketCapture:
         except PermissionError:
             print("[!] Packet capture requires root/admin privileges.")
             self._running.clear()
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
             print(f"[!] Capture error: {e}")
             self._running.clear()
 
@@ -201,8 +223,8 @@ class PacketCapture:
                 try:
                     qname = dns.qd.qname.decode("utf-8", errors="ignore").rstrip(".")
                     info.dns_query = qname
-                except Exception:
-                    pass
+                except (AttributeError, UnicodeDecodeError, IndexError, TypeError) as e:
+                    logger.debug("Skipping malformed DNS query name: %s", e)
             # Extract answers (responses)
             if dns.ancount and dns.ancount > 0:
                 answers = []
@@ -212,8 +234,8 @@ class PacketCapture:
                         if isinstance(rdata, bytes):
                             rdata = rdata.decode("utf-8", errors="ignore")
                         answers.append(str(rdata))
-                    except Exception:
-                        pass
+                    except (AttributeError, UnicodeDecodeError, IndexError, TypeError) as e:
+                        logger.debug("Skipping malformed DNS answer record: %s", e)
                 info.dns_answers = answers
                 # Cache for poisoning detection
                 if info.dns_query:
@@ -240,7 +262,7 @@ class PacketCapture:
         if self._callback:
             try:
                 self._callback(info)
-            except Exception as e:
+            except (RuntimeError, ValueError, TypeError, AttributeError, OSError) as e:
                 print(f"[!] Callback error: {e}")
 
 
@@ -250,7 +272,7 @@ def list_interfaces() -> list[dict]:
     for iface in get_if_list():
         try:
             addr = get_if_addr(iface)
-        except Exception:
+        except (OSError, ValueError, RuntimeError):
             addr = "unknown"
         result.append({"name": iface, "address": addr})
     return result
