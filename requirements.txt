@@ -2,7 +2,7 @@
 # Python 3.11+ recommended (supports Python 3.10+)
 
 # Packet capture & network analysis
-scapy>=2.5.0
+scapy>=2.8.0
 
 # Machine learning
 scikit-learn>=1.5.0
