@@ -13,7 +13,7 @@ joblib>=1.4.0
 rich>=13.9.0
 
 # Configuration
-pyyaml>=6.0.1
+pyyaml>=6.0.4
 
 # Database ORM
 sqlalchemy>=2.0.0
