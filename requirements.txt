@@ -16,7 +16,7 @@ rich>=13.9.0
 pyyaml>=6.0.1
 
 # Database ORM
-sqlalchemy>=2.0.0
+sqlalchemy>=2.1.9
 
 # HTTP requests (Slack webhook, email)
 requests>=2.32.0
